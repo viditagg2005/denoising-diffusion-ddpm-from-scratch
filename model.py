@@ -136,12 +136,24 @@ def init_tiny_unet(in_ch: int = 1, hidden: int = 16, time_dim: int = 16, seed: i
         if name.endswith('_b'):
             d[name] = torch.zeros(shape,requires_grad = True)
         else:
-            d[name] = torch.randn(shape, requires_grad = True)*0.02
+            d[name] = (torch.randn(shape)*0.02).requires_grad_(True)
     return d
     pass
 
-# Step 11 - tiny_unet_forward (not yet solved)
-# TODO: implement
+# Step 11 - tiny_unet_forward
+import torch
+import torch.nn.functional as F
+
+def tiny_unet_forward(x, t, params: dict):
+    # TODO: time-conditioned tiny CNN predicting noise
+    h = F.conv2d(x,params['conv_in_w'],params['conv_in_b'], padding =1)
+    t_emb = timestep_embedding(t, params['time_mlp_w'].shape[1])
+    t_emb = F.relu(F.linear(t_emb, params['time_mlp_w'],params['time_mlp_b']))
+    h = h + t_emb[:,:,None,None]
+    h = F.relu(h)
+    h = F.relu(F.conv2d(h,params['conv_mid_w'],params['conv_mid_b'],padding=1))
+    return F.conv2d(h,params['conv_out_w'],params['conv_out_b'], padding=1)
+    pass
 
 # Step 12 - make_blob_dataset (not yet solved)
 # TODO: implement
